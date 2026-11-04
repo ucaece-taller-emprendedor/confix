@@ -1,3 +1,4 @@
+import './cargar-env'
 // Datos de DEMO para mostrar en clase. Todo lo que crea queda marcado con esDemo = true,
 // y volver a correrlo borra y recrea solo esos datos (no toca lo que cargó gente real).
 import { randomUUID } from 'node:crypto'

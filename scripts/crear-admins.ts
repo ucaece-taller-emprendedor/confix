@@ -1,3 +1,4 @@
+import './cargar-env'
 // Crea o promueve a admin las cuentas listadas en ADMIN_EMAILS.
 // Las cuentas que todavía no existen se crean con la contraseña de ADMIN_INITIAL_PASSWORD.
 import { randomUUID } from 'node:crypto'

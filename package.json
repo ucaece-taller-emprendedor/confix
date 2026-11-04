@@ -9,9 +9,9 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx --env-file=.env scripts/migrate.ts",
-    "db:seed": "tsx --env-file=.env scripts/seed.ts",
-    "db:admins": "tsx --env-file=.env scripts/crear-admins.ts",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:seed": "tsx scripts/seed.ts",
+    "db:admins": "tsx scripts/crear-admins.ts",
     "test": "playwright test",
     "test:e2e": "playwright test"
   },
