@@ -5,6 +5,9 @@ import { CatalogProvider } from '@/lib/catalog-context'
 import { RequestProvider } from '@/lib/request-store'
 import { getCurrentUser } from '@/lib/auth/session'
 
+// Depende de la sesión y de la base: nunca se prerenderiza en el build (que no tiene base).
+export const dynamic = 'force-dynamic'
+
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const [user, catalog, categories, barrios] = await Promise.all([
     getCurrentUser(),
