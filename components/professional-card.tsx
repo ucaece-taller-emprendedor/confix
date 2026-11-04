@@ -31,7 +31,7 @@ function AvailabilityBadge({ available }: { available: boolean }) {
 export function ProfessionalCardVertical({ professional, className }: CardProps) {
   return (
     <Link
-      href={`/profesional/${professional.id}`}
+      href={`/app/profesional/${professional.id}`}
       className={cn(
         'group flex flex-col gap-3 rounded-3xl bg-secondary p-3 transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring',
         className,
@@ -58,7 +58,7 @@ export function ProfessionalCardRow({ professional, className }: CardProps) {
 
   return (
     <Link
-      href={`/profesional/${professional.id}`}
+      href={`/app/profesional/${professional.id}`}
       className={cn(
         'group flex items-center gap-4 rounded-3xl bg-secondary p-3 transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring',
         className,

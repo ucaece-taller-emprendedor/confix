@@ -5,7 +5,7 @@ import { Clock, SearchX, Search, Star, X } from 'lucide-react'
 import { CategoryIcon } from '@/components/category-icon'
 import { ProfessionalCardRow } from '@/components/professional-card'
 import { useCatalog } from '@/lib/catalog-context'
-import { CATEGORIES, normalize, type CategoryId } from '@/lib/data'
+import { normalize, type CategoryId } from '@/lib/data'
 import { cn } from '@/lib/utils'
 
 type CategoryFilter = CategoryId | 'todas'
@@ -48,7 +48,7 @@ export function SearchResults({
   initialQuery: string
   initialCategory: CategoryFilter
 }) {
-  const { professionals } = useCatalog()
+  const { professionals, categories } = useCatalog()
   const [query, setQuery] = useState(initialQuery)
   const [category, setCategory] = useState<CategoryFilter>(initialCategory)
   const [onlyToday, setOnlyToday] = useState(false)
@@ -121,7 +121,7 @@ export function SearchResults({
           <Chip active={category === 'todas'} onClick={() => setCategory('todas')}>
             Todas
           </Chip>
-          {CATEGORIES.map((item) => (
+          {categories.map((item) => (
             <Chip key={item.id} active={category === item.id} onClick={() => setCategory(item.id)}>
               <CategoryIcon id={item.id} className="size-4" />
               {item.nombre}

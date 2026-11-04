@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ClipboardList, Home, Search, User } from 'lucide-react'
-import type { SessionUser } from '@/lib/roles'
+import type { SessionUser } from '@/lib/auth/roles'
 import { useRequestStore } from '@/lib/request-store'
 import { cn } from '@/lib/utils'
 
@@ -12,15 +12,15 @@ export function BottomNav({ user }: { user: SessionUser | null }) {
   const { itemCount } = useRequestStore()
 
   const items = [
-    { href: '/', label: 'Inicio', icon: Home },
-    { href: '/buscar', label: 'Buscar', icon: Search },
-    { href: '/solicitud', label: 'Solicitud', icon: ClipboardList },
+    { href: '/app', label: 'Inicio', icon: Home },
+    { href: '/app/buscar', label: 'Buscar', icon: Search },
+    { href: '/app/solicitud', label: 'Solicitud', icon: ClipboardList },
     user
-      ? { href: '/cuenta', label: 'Cuenta', icon: User }
-      : { href: '/ingresar', label: 'Ingresar', icon: User },
+      ? { href: '/app/cuenta', label: 'Cuenta', icon: User }
+      : { href: '/app/ingresar', label: 'Ingresar', icon: User },
   ]
 
-  if (pathname.startsWith('/profesional/')) return null
+  if (pathname.startsWith('/app/profesional/')) return null
 
   return (
     <nav
@@ -29,7 +29,7 @@ export function BottomNav({ user }: { user: SessionUser | null }) {
     >
       <ul className="mx-auto flex h-16 max-w-md items-stretch justify-around px-2">
         {items.map(({ href, label, icon: Icon }) => {
-          const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
+          const active = href === '/app' ? pathname === '/app' : pathname.startsWith(href)
           return (
             <li key={href} className="flex-1">
               <Link
@@ -47,7 +47,7 @@ export function BottomNav({ user }: { user: SessionUser | null }) {
                   )}
                 >
                   <Icon className="size-5" aria-hidden="true" />
-                  {href === '/solicitud' && itemCount > 0 && (
+                  {href === '/app/solicitud' && itemCount > 0 && (
                     <span className="absolute -right-0.5 -top-1 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
                       {itemCount}
                     </span>

@@ -28,3 +28,8 @@ out/
 *.tsbuildinfo
 npm-debug.log*
 .DS_Store
+
+# Tests
+/test-results/
+/playwright-report/
+next-env.d.ts

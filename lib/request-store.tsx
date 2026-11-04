@@ -1,7 +1,6 @@
 'use client'
 
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
-import { BARRIOS } from '@/lib/data'
 
 export type CartItem = {
   serviceId: string
@@ -22,8 +21,8 @@ type RequestStore = {
 
 const RequestContext = createContext<RequestStore | null>(null)
 
-export function RequestProvider({ children }: { children: React.ReactNode }) {
-  const [barrio, setBarrio] = useState(BARRIOS[0])
+export function RequestProvider({ defaultBarrio, children }: { defaultBarrio: string; children: React.ReactNode }) {
+  const [barrio, setBarrio] = useState(defaultBarrio)
   const [professionalId, setProfessionalId] = useState<string | null>(null)
   const [items, setItems] = useState<CartItem[]>([])
 
