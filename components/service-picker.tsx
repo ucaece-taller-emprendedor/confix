@@ -25,7 +25,7 @@ export function ServicePicker({ professional }: { professional: Professional }) 
   function requestQuote() {
     if (selected.length === 0) return
     setRequest(professional.id, selected)
-    router.push('/solicitud')
+    router.push('/app/solicitud')
   }
 
   return (

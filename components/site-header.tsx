@@ -3,25 +3,26 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ChevronDown, MapPin, User, Wrench } from 'lucide-react'
-import { BARRIOS } from '@/lib/data'
-import type { SessionUser } from '@/lib/roles'
+import { useCatalog } from '@/lib/catalog-context'
+import type { SessionUser } from '@/lib/auth/roles'
 import { useRequestStore } from '@/lib/request-store'
 import { cn } from '@/lib/utils'
 
 const links = [
-  { href: '/', label: 'Inicio' },
-  { href: '/buscar', label: 'Buscar' },
-  { href: '/solicitud', label: 'Mi solicitud' },
+  { href: '/app', label: 'Inicio' },
+  { href: '/app/buscar', label: 'Buscar' },
+  { href: '/app/solicitud', label: 'Mi solicitud' },
 ]
 
 export function SiteHeader({ user }: { user: SessionUser | null }) {
   const pathname = usePathname()
   const { barrio, setBarrio, itemCount } = useRequestStore()
+  const { barrios } = useCatalog()
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-background/90 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between gap-3 px-4">
-        <Link href="/" className="flex items-center gap-2" aria-label="CONFIX, ir al inicio">
+        <Link href="/app" className="flex items-center gap-2" aria-label="CONFIX, ir al inicio">
           <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Wrench className="size-5" aria-hidden="true" />
           </span>
@@ -30,7 +31,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
 
         <nav aria-label="Principal" className="hidden items-center gap-1 md:flex">
           {links.map((link) => {
-            const active = link.href === '/' ? pathname === '/' : pathname.startsWith(link.href)
+            const active = link.href === '/app' ? pathname === '/app' : pathname.startsWith(link.href)
             return (
               <Link
                 key={link.href}
@@ -42,7 +43,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
                 )}
               >
                 {link.label}
-                {link.href === '/solicitud' && itemCount > 0 && (
+                {link.href === '/app/solicitud' && itemCount > 0 && (
                   <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs text-primary-foreground">
                     {itemCount}
                   </span>
@@ -61,7 +62,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
             onChange={(event) => setBarrio(event.target.value)}
             className="h-10 appearance-none rounded-full bg-secondary pl-9 pr-9 text-sm font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            {BARRIOS.map((item) => (
+            {barrios.map((item) => (
               <option key={item} value={item}>
                 {item}, CABA
               </option>
@@ -70,7 +71,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
           <ChevronDown className="pointer-events-none absolute right-3 size-4 text-muted-foreground" aria-hidden="true" />
         </label>
         <Link
-          href={user ? '/cuenta' : '/ingresar'}
+          href={user ? (user.role === 'admin' ? '/admin' : '/app/cuenta') : '/app/ingresar'}
           className="hidden h-10 items-center gap-2 rounded-full bg-primary px-4 text-sm font-bold text-primary-foreground hover:opacity-90 md:inline-flex"
         >
           <User className="size-4" aria-hidden="true" />

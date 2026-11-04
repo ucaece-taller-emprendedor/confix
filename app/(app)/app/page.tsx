@@ -3,11 +3,10 @@ import { ArrowRight, BadgeCheck, ShieldCheck } from 'lucide-react'
 import { CategoryIcon } from '@/components/category-icon'
 import { ProfessionalCardRow, ProfessionalCardVertical } from '@/components/professional-card'
 import { HomeSearchBar } from '@/components/search-bar'
-import { getCatalog } from '@/lib/catalog'
-import { CATEGORIES } from '@/lib/data'
+import { getCatalog, getCategories } from '@/lib/catalog'
 
 export default async function HomePage() {
-  const professionals = await getCatalog()
+  const [professionals, categories] = await Promise.all([getCatalog(), getCategories()])
   const nearby = [...professionals].sort((a, b) => a.distanciaKm - b.distanciaKm).slice(0, 5)
   const recommended = [...professionals].sort((a, b) => b.puntaje - a.puntaje || b.cantidadResenas - a.cantidadResenas).slice(0, 4)
 
@@ -28,10 +27,10 @@ export default async function HomePage() {
           Categorías
         </h2>
         <ul className="grid grid-cols-4 gap-3">
-          {CATEGORIES.map((category) => (
+          {categories.map((category) => (
             <li key={category.id}>
               <Link
-                href={`/buscar?categoria=${category.id}`}
+                href={`/app/buscar?categoria=${category.id}`}
                 className="flex flex-col items-center gap-2 rounded-3xl bg-secondary px-1 py-4 text-center transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
               >
                 <span className="flex size-12 items-center justify-center rounded-2xl bg-background shadow-sm md:size-14">
@@ -53,7 +52,7 @@ export default async function HomePage() {
           <p className="text-sm text-primary-foreground/85">Profesionales verificados y precios claros antes de contratar.</p>
         </div>
         <Link
-          href="/buscar"
+          href="/app/buscar"
           aria-label="Ver profesionales"
           className="flex size-11 shrink-0 items-center justify-center rounded-full bg-background text-primary transition-transform hover:scale-105"
         >
@@ -66,7 +65,7 @@ export default async function HomePage() {
           <h2 id="titulo-cercanos" className="text-lg font-bold">
             Profesionales cercanos
           </h2>
-          <Link href="/buscar" className="text-sm font-semibold text-primary hover:underline">
+          <Link href="/app/buscar" className="text-sm font-semibold text-primary hover:underline">
             Ver todos
           </Link>
         </div>

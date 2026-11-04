@@ -34,7 +34,7 @@ export default async function ProfessionalPage({ params }: { params: Promise<{ i
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 pb-32 pt-4">
-      <BackButton fallbackHref="/buscar" />
+      <BackButton fallbackHref="/app/buscar" />
 
       <section aria-labelledby="nombre-profesional" className="flex flex-col items-center gap-4 rounded-3xl bg-secondary p-6 text-center sm:flex-row sm:text-left">
         <ProfessionalPhoto

@@ -37,7 +37,7 @@ export function RequestFlow({ user }: { user: { id: string; name: string } | nul
           Buscá un profesional, elegí los servicios que necesitás y pedí tu cotización.
         </p>
         <Link
-          href="/buscar"
+          href="/app/buscar"
           className="mt-2 inline-flex h-14 items-center gap-2 rounded-2xl bg-primary px-6 text-base font-bold text-primary-foreground hover:opacity-90"
         >
           <Search className="size-5" aria-hidden="true" />
@@ -46,7 +46,7 @@ export function RequestFlow({ user }: { user: { id: string; name: string } | nul
       </div>
 
       <Link
-        href="/mis-solicitudes"
+        href="/app/mis-solicitudes"
         className="flex h-14 items-center justify-center rounded-2xl bg-secondary text-base font-bold hover:bg-accent"
       >
         Ver mis solicitudes enviadas

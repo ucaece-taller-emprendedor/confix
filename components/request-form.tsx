@@ -3,11 +3,12 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { Loader2, Minus, Plus, Trash2 } from 'lucide-react'
-import { submitServiceRequest } from '@/app/actions/requests'
+import { submitServiceRequest } from '@/lib/actions/solicitudes'
 import { ProfessionalPhoto } from '@/components/professional-photo'
 import { Rating } from '@/components/rating'
-import { BARRIOS, formatPrice, type Professional, type WeekDay } from '@/lib/data'
+import { formatPrice, type Professional, type WeekDay } from '@/lib/data'
 import type { SubmittedRequest } from '@/lib/requests'
+import { useCatalog } from '@/lib/catalog-context'
 import { useRequestStore } from '@/lib/request-store'
 import { cn } from '@/lib/utils'
 
@@ -90,6 +91,7 @@ export function RequestForm({
   onSubmitted: (request: SubmittedRequest) => void
 }) {
   const { items, setQuantity, removeItem, clearCart, barrio } = useRequestStore()
+  const { barrios } = useCatalog()
   const [pending, setPending] = useState(false)
   const [serverError, setServerError] = useState('')
   const isOwnProfile = !!user && professional.ownerId === user.id
@@ -106,6 +108,8 @@ export function RequestForm({
   const [errors, setErrors] = useState<Errors>({})
 
   useEffect(() => {
+    // Los días dependen de la fecha actual: se calculan recién en el cliente para evitar diferencias de hidratación.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDays(buildDays(professional))
   }, [professional])
 
@@ -174,7 +178,7 @@ export function RequestForm({
               Resumen del servicio
             </h2>
             <Link
-              href={`/profesional/${professional.id}`}
+              href={`/app/profesional/${professional.id}`}
               className="flex items-center gap-3 rounded-2xl bg-background p-3 hover:bg-accent/50"
             >
               <ProfessionalPhoto nombre={professional.nombre} foto={professional.foto} sizes="56px" className="size-14 rounded-xl" />
@@ -230,7 +234,7 @@ export function RequestForm({
             </ul>
 
             <div className="flex items-center justify-between text-sm">
-              <Link href={`/profesional/${professional.id}`} className="font-semibold text-primary hover:underline">
+              <Link href={`/app/profesional/${professional.id}`} className="font-semibold text-primary hover:underline">
                 Agregar más servicios
               </Link>
               <button type="button" onClick={clearCart} className="font-semibold text-muted-foreground hover:text-destructive">
@@ -267,7 +271,7 @@ export function RequestForm({
               </Field>
               <Field id="zona" label="Barrio">
                 <select id="zona" value={zona} onChange={(event) => setZona(event.target.value)} className={cn(inputClass, 'appearance-none')}>
-                  {BARRIOS.map((item) => (
+                  {barrios.map((item) => (
                     <option key={item} value={item}>
                       {item}
                     </option>
@@ -425,12 +429,12 @@ export function RequestForm({
             <>
               <p className="text-sm font-medium">Para confirmar tu solicitud necesitás una cuenta de CONFIX.</p>
               <Link
-                href="/ingresar?next=/solicitud"
+                href="/app/ingresar?next=/app/solicitud"
                 className="flex h-14 w-full items-center justify-center rounded-2xl bg-primary text-base font-bold text-primary-foreground transition-opacity hover:opacity-90"
               >
                 Ingresar para confirmar
               </Link>
-              <Link href="/registro?next=%2Fsolicitud" className="text-center text-sm font-bold text-primary hover:underline">
+              <Link href="/app/registro?next=%2Fapp%2Fsolicitud" className="text-center text-sm font-bold text-primary hover:underline">
                 Crear una cuenta
               </Link>
             </>

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { SearchResults } from '@/components/search-results'
-import { CATEGORIES, type CategoryId } from '@/lib/data'
+import { getCategories } from '@/lib/catalog'
 
 export const metadata: Metadata = {
   title: 'Buscar profesionales | CONFIX',
@@ -12,10 +12,10 @@ export default async function SearchPage({
 }: {
   searchParams: Promise<{ q?: string | string[]; categoria?: string | string[] }>
 }) {
-  const params = await searchParams
+  const [params, categories] = await Promise.all([searchParams, getCategories()])
   const q = Array.isArray(params.q) ? params.q[0] : params.q
   const categoriaParam = Array.isArray(params.categoria) ? params.categoria[0] : params.categoria
-  const categoria = CATEGORIES.find((c) => c.id === categoriaParam)?.id as CategoryId | undefined
+  const categoria = categories.find((c) => c.id === categoriaParam)?.id
 
   return (
     <SearchResults

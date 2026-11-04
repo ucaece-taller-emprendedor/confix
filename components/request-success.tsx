@@ -76,13 +76,13 @@ export function RequestSuccess({ request }: { request: SubmittedRequest }) {
 
       <div className="flex w-full flex-col gap-3 sm:flex-row">
         <Link
-          href="/"
+          href="/app"
           className="flex h-14 items-center justify-center rounded-2xl bg-primary text-base font-bold text-primary-foreground hover:opacity-90 sm:flex-1"
         >
           Volver al inicio
         </Link>
         <Link
-          href="/mis-solicitudes"
+          href="/app/mis-solicitudes"
           className="flex h-14 items-center justify-center rounded-2xl bg-secondary text-base font-bold hover:bg-accent sm:flex-1"
         >
           Ver mis solicitudes

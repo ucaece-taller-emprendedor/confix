@@ -11,7 +11,7 @@ export function HomeSearchBar() {
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const trimmed = query.trim()
-    router.push(trimmed ? `/buscar?q=${encodeURIComponent(trimmed)}` : '/buscar')
+    router.push(trimmed ? `/app/buscar?q=${encodeURIComponent(trimmed)}` : '/app/buscar')
   }
 
   return (

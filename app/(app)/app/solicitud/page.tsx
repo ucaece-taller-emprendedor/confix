@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { RequestFlow } from '@/components/request-flow'
-import { getCurrentUser } from '@/lib/session'
+import { getCurrentUser } from '@/lib/auth/session'
 
 export const metadata: Metadata = {
   title: 'Mi solicitud | CONFIX',
