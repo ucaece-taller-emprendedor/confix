@@ -1,27 +1,36 @@
 import { betterAuth } from 'better-auth'
 import { pool } from '@/lib/db'
+import { env, googleHabilitado } from '@/lib/env'
 
 export const auth = betterAuth({
   database: pool,
-  baseURL:
-    process.env.BETTER_AUTH_URL ??
-    (process.env.VERCEL_PROJECT_PRODUCTION_URL
-      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-      : process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : process.env.V0_RUNTIME_URL),
+  baseURL: env.BETTER_AUTH_URL,
+  secret: env.BETTER_AUTH_SECRET,
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
     minPasswordLength: 8,
   },
+  // Google solo se habilita si están las credenciales; nunca se simula.
+  ...(googleHabilitado
+    ? {
+        socialProviders: {
+          google: {
+            clientId: env.GOOGLE_CLIENT_ID as string,
+            clientSecret: env.GOOGLE_CLIENT_SECRET as string,
+          },
+        },
+      }
+    : {}),
   user: {
     additionalFields: {
+      // El registro público puede elegir "cliente" o "profesional". Nunca "admin":
+      // el hook de abajo descarta cualquier otro valor.
       role: {
         type: 'string',
         required: false,
         defaultValue: 'cliente',
-        input: false,
+        input: true,
       },
     },
   },
@@ -29,47 +38,19 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (newUser) => {
-          // La primera cuenta registrada queda como administradora; el resto empieza como cliente.
-          const { rows } = await pool.query('select count(*)::int as total from "user"')
-          const role = rows[0]?.total === 0 ? 'admin' : 'cliente'
+          const pedido = (newUser as { role?: unknown }).role
+          let role: 'cliente' | 'profesional' | 'admin' = pedido === 'profesional' ? 'profesional' : 'cliente'
+          // Un admin solo puede salir de ADMIN_EMAILS y con el email verificado (Google).
+          // Las altas con email y contraseña nunca son admin: para eso está `npm run db:admins`.
+          if (newUser.emailVerified && env.ADMIN_EMAILS.includes(newUser.email.toLowerCase())) role = 'admin'
           return { data: { ...newUser, role } }
         },
       },
     },
   },
-  trustedOrigins: [
-    ...(process.env.NODE_ENV === 'development'
-      ? [
-          'http://localhost:3000',
-          ...(process.env.V0_RUNTIME_URL ? [process.env.V0_RUNTIME_URL] : []),
-          ...(process.env.V0_DEV_APP_URL ? [process.env.V0_DEV_APP_URL] : []),
-          ...(process.env.V0_BUILD_URL ? [process.env.V0_BUILD_URL] : []),
-          ...(process.env.V0_SANDBOX_URL ? [process.env.V0_SANDBOX_URL] : []),
-        ]
-      : []),
-    ...(process.env.NODE_ENV === 'production'
-      ? [
-          ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
-          ...(process.env.VERCEL_PROJECT_PRODUCTION_URL
-            ? [`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`]
-            : []),
-        ]
-      : []),
-  ],
+  trustedOrigins: [env.BETTER_AUTH_URL, ...(process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000'])],
   session: {
-    expiresIn: 60 * 60 * 24 * 7,
+    expiresIn: 60 * 60 * 24 * 30,
     updateAge: 60 * 60 * 24,
   },
-  ...(process.env.NODE_ENV === 'development'
-    ? {
-        advanced: {
-          // Required by the cross-site v0 preview iframe. Without these
-          // attributes, login succeeds but the next request appears signed out.
-          defaultCookieAttributes: {
-            sameSite: 'none' as const,
-            secure: true,
-          },
-        },
-      }
-    : {}),
 })

@@ -19,7 +19,14 @@ export type SessionUser = {
   role: Role
 }
 
-export function safeNextPath(value: string | string[] | undefined, fallback = '/') {
+/** Panel al que va cada rol después de ingresar. */
+export function homeForRole(role: Role) {
+  if (role === 'admin') return '/admin'
+  if (role === 'profesional') return '/app/panel'
+  return '/app'
+}
+
+export function safeNextPath(value: string | string[] | undefined, fallback = '/app') {
   const raw = Array.isArray(value) ? value[0] : value
   if (!raw || !raw.startsWith('/') || raw.startsWith('//') || raw.includes('\\')) return fallback
   return raw
