@@ -113,7 +113,7 @@ export function Registro() {
     setEnviando(true)
     try {
       await registrar({ nombre: r.datos.nombre, email: r.datos.email, clave: r.datos.clave, rol: r.datos.rol as RolRegistrable })
-      navegar(panelDe(r.datos.rol as 'usuario'), { replace: true })
+      navegar(panelDe(r.datos.rol as RolRegistrable), { replace: true })
     } catch (err) {
       setError(mensajeDeError(err))
     } finally {

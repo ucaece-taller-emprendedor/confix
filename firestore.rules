@@ -229,7 +229,7 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/professionals/$(request.resource.data.professionalId))
         && itemsOk(request.resource.data.items)
         && solicitudOk(request.resource.data)
-        && str(request.resource.data.direccion, 4, 120)
+        && str(request.resource.data.direccion, 4, 160)
         && str(request.resource.data.piso, 0, 30)
         && str(request.resource.data.barrio, 3, 40)
         && str(request.resource.data.fecha, 1, 80)

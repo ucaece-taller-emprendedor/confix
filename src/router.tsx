@@ -1,10 +1,15 @@
 import { createBrowserRouter, Navigate } from 'react-router'
-import { RequireAdmin, RequireAuth, RequireRole } from '@/auth/guards'
-import { AdminLayout, SitioLayout } from '@/components/layouts'
+import { RequireAdmin, RequireRole } from '@/auth/guards'
+import { AdminLayout, AppLayout, SitioLayout } from '@/components/layouts'
 import AdminLogin from '@/pages/admin/AdminLogin'
-import { AdminInicio, AdminItems, AdminUsuarios } from '@/pages/admin/AdminPaginas'
-import { AppInicio, CompletarPerfil, Ingresar, Registro, Suspendido } from '@/pages/app/Acceso'
-import { PanelSocio, PanelUsuario } from '@/pages/app/Paneles'
+import { AdminCatalogo, AdminInicio, AdminProfesionales, AdminSolicitudes, AdminUsuarios } from '@/pages/admin/AdminPaginas'
+import { CompletarPerfil, Ingresar, Registro, Suspendido } from '@/pages/app/Acceso'
+import Buscar from '@/pages/app/Buscar'
+import Inicio from '@/pages/app/Inicio'
+import MisSolicitudes from '@/pages/app/MisSolicitudes'
+import PanelProfesional from '@/pages/app/PanelProfesional'
+import ProfesionalDetalle from '@/pages/app/ProfesionalDetalle'
+import Solicitud from '@/pages/app/Solicitud'
 import Landing from '@/pages/public/Landing'
 import NoEncontrada from '@/pages/public/NoEncontrada'
 
@@ -12,20 +17,19 @@ export const router = createBrowserRouter([
   { path: '/', element: <SitioLayout />, children: [{ index: true, element: <Landing /> }] },
   {
     path: '/app',
-    element: <SitioLayout />,
+    element: <AppLayout />,
     children: [
-      { index: true, element: <AppInicio /> },
+      // Explorar es público; pedir cotización o gestionar el perfil requiere cuenta.
+      { index: true, element: <Inicio /> },
+      { path: 'buscar', element: <Buscar /> },
+      { path: 'profesional/:id', element: <ProfesionalDetalle /> },
+      { path: 'solicitud', element: <Solicitud /> },
       { path: 'ingresar', element: <Ingresar /> },
       { path: 'registro', element: <Registro /> },
       { path: 'completar-perfil', element: <CompletarPerfil /> },
       { path: 'suspendido', element: <Suspendido /> },
-      {
-        element: <RequireAuth />,
-        children: [
-          { path: 'usuario', element: <RequireRole roles={['usuario']}><PanelUsuario /></RequireRole> },
-          { path: 'socio', element: <RequireRole roles={['socio']}><PanelSocio /></RequireRole> },
-        ],
-      },
+      { path: 'mis-solicitudes', element: <RequireRole roles={['cliente']}><MisSolicitudes /></RequireRole> },
+      { path: 'panel', element: <RequireRole roles={['profesional']}><PanelProfesional /></RequireRole> },
     ],
   },
   { path: '/admin/login', element: <AdminLogin /> },
@@ -33,13 +37,15 @@ export const router = createBrowserRouter([
     path: '/admin',
     element: (
       <RequireAdmin>
-        <AdminLayout navegacion={[{ to: '/admin', etiqueta: 'Inicio', fin: true }, { to: '/admin/usuarios', etiqueta: 'Usuarios' }, { to: '/admin/items', etiqueta: 'Ítems' }]} />
+        <AdminLayout navegacion={[{ to: '/admin', etiqueta: 'Resumen', fin: true }, { to: '/admin/profesionales', etiqueta: 'Profesionales' }, { to: '/admin/usuarios', etiqueta: 'Usuarios' }, { to: '/admin/solicitudes', etiqueta: 'Solicitudes' }, { to: '/admin/catalogo', etiqueta: 'Catálogo' }]} />
       </RequireAdmin>
     ),
     children: [
       { index: true, element: <AdminInicio /> },
+      { path: 'profesionales', element: <AdminProfesionales /> },
       { path: 'usuarios', element: <AdminUsuarios /> },
-      { path: 'items', element: <AdminItems /> },
+      { path: 'solicitudes', element: <AdminSolicitudes /> },
+      { path: 'catalogo', element: <AdminCatalogo /> },
       { path: '*', element: <Navigate to="/admin" replace /> },
     ],
   },
