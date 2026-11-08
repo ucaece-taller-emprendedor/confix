@@ -5,15 +5,17 @@
  * Es idempotente: se puede correr varias veces.
  */
 import { pathToFileURL } from 'node:url'
+import { BARRIOS, CATEGORIAS } from './datos/catalogo'
+import { PROFESIONALES_DEMO } from './datos/profesionales-demo'
 import { iniciarAdmin } from './lib/admin-sdk'
 
 export const CLAVE_DEMO = 'Demo-Clave-2026' // pública, solo existe en los emuladores
 
 export const USUARIOS_DEMO = [
-  { uid: 'demo-usuario', email: 'usuario.demo@plantilla.test', displayName: 'Usuario Demo', role: 'usuario', status: 'activo' },
-  { uid: 'demo-socio', email: 'socio.demo@plantilla.test', displayName: 'Socio Demo', role: 'socio', status: 'activo' },
-  { uid: 'demo-socio-pendiente', email: 'pendiente.demo@plantilla.test', displayName: 'Socio Pendiente Demo', role: 'socio', status: 'pendiente' },
-  { uid: 'demo-admin', email: 'admin.demo@plantilla.test', displayName: 'Admin Demo', role: 'admin', status: 'activo' },
+  { uid: 'demo-cliente', email: 'cliente.demo@confix.test', displayName: 'Clara Cliente (demo)', role: 'cliente', status: 'activo' },
+  { uid: 'demo-profesional', email: 'profesional.demo@confix.test', displayName: 'Esteban Gómez (demo)', role: 'profesional', status: 'activo' },
+  { uid: 'demo-profesional-pendiente', email: 'pendiente.demo@confix.test', displayName: 'Paula Pendiente (demo)', role: 'profesional', status: 'pendiente' },
+  { uid: 'demo-admin', email: 'admin.demo@confix.test', displayName: 'Ada Admin (demo)', role: 'admin', status: 'activo' },
 ] as const
 
 export async function sembrar() {
@@ -27,13 +29,39 @@ export async function sembrar() {
     await db.doc(`users/${u.uid}`).set({ email: u.email, displayName: u.displayName, role: u.role, status: u.status, isDemo: true, createdAt: new Date() })
   }
 
-  const items = [
-    { id: 'demo-item-1', titulo: 'Ítem de ejemplo publicado', descripcion: 'Contenido de demostración cargado por el socio demo.', publicado: true },
-    { id: 'demo-item-2', titulo: 'Ítem de ejemplo en borrador', descripcion: 'Este todavía no se ve para los usuarios.', publicado: false },
-  ]
-  for (const i of items) {
-    const { id, ...resto } = i
-    await db.doc(`items/${id}`).set({ ...resto, ownerId: 'demo-socio', ownerName: 'Socio Demo', isDemo: true, createdAt: new Date() })
+  for (const c of CATEGORIAS) {
+    const { id, ...datos } = c
+    await db.doc(`categories/${id}`).set({ ...datos, activa: true })
+  }
+  for (const [i, nombre] of BARRIOS.entries()) await db.doc(`barrios/${nombre}`).set({ nombre, orden: i + 1, activo: true })
+
+  // Profesionales del catálogo original. Esteban tiene cuenta para ingresar; el resto son perfiles sin login.
+  for (const p of PROFESIONALES_DEMO) {
+    const { id, ...datos } = p
+    const esEsteban = id === 'esteban-gomez'
+    const docId = esEsteban ? 'demo-profesional' : id
+    await db.doc(`professionals/${docId}`).set({ ...datos, ownerId: esEsteban ? 'demo-profesional' : `demo-${id}`, estado: 'aprobado', isDemo: true, createdAt: new Date() })
+  }
+
+  // Un profesional PENDIENTE, para probar la aprobación desde el panel de administración.
+  await db.doc('professionals/demo-profesional-pendiente').set({
+    ownerId: 'demo-profesional-pendiente', nombre: 'Paula Pendiente', categoria: 'pintura', oficio: 'Pintora', barrio: 'Palermo', horario: '9:00 a 17:00', costoVisita: 4000,
+    descripcion: 'Perfil de ejemplo esperando aprobación del equipo de CONFIX. Pintura de interiores y retoques.',
+    servicios: [{ id: 'pp-1', nombre: 'Pintura de ambiente', detalle: 'Paredes y techo', precio: 50000, unidad: 'por ambiente' }],
+    foto: '', puntaje: 0, cantidadResenas: 0, distanciaKm: 2.5, dias: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie'], anosExperiencia: 0, trabajosRealizados: 0,
+    respuesta: 'Nuevo en CONFIX', resenas: [], disponibleHoy: true, estado: 'pendiente', isDemo: true, createdAt: new Date(),
+  })
+
+  // Una solicitud de ejemplo de la clienta demo a Esteban.
+  const esteban = PROFESIONALES_DEMO.find(p => p.id === 'esteban-gomez')
+  const servicio = esteban?.servicios[0]
+  if (esteban && servicio) {
+    await db.doc('requests/CFX-DEMO01').set({
+      clientId: 'demo-cliente', professionalId: 'demo-profesional', professionalOwnerId: 'demo-profesional', professionalNombre: esteban.nombre,
+      items: [{ nombre: servicio.nombre, precio: servicio.precio, cantidad: 1 }], direccion: 'Thames 1450, 3° B · Palermo, CABA', piso: '3° B', barrio: 'Palermo',
+      fecha: 'lunes (ejemplo)', franja: 'Mañana (8 a 12 h)', notas: 'Solicitud de ejemplo (demo).', contactoNombre: 'Clara Cliente (demo)', contactoTelefono: '11 5555 0000',
+      costoVisita: esteban.costoVisita, total: servicio.precio + esteban.costoVisita, estado: 'pendiente', isDemo: true, createdAt: new Date(),
+    })
   }
 }
 
@@ -41,7 +69,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   sembrar()
     .then(() => {
       console.log('✔ Seed de demo listo (emuladores). Usuarios DEMO (clave pública de demo):')
-      for (const u of USUARIOS_DEMO) console.log(`  ${u.role.padEnd(8)} ${u.email}  /  ${CLAVE_DEMO}`)
+      for (const u of USUARIOS_DEMO) console.log(`  ${u.role.padEnd(12)} ${u.email}  /  ${CLAVE_DEMO}`)
     })
     .catch((e: unknown) => {
       console.error(`✖ ${e instanceof Error ? e.message : String(e)}`)

@@ -35,15 +35,17 @@ function SelectorTipo({ valor, onCambio, error }: { valor: string; onCambio: (v:
 }
 
 export function Ingresar() {
-  const { ingresar, ingresarConGoogle, perfil, cargando } = useAuth()
-  const navegar = useNavigate()
+  const { ingresar, ingresarConGoogle, usuario, perfil, cargando } = useAuth()
   const loc = useLocation()
   const [errores, setErrores] = useState<Errores>({})
   const [error, setError] = useState('')
   const [enviando, setEnviando] = useState(false)
 
   if (cargando && !enviando) return <Cargando />
+  // Al ingresar se va al destino pedido o al panel del rol (el perfil llega solo, sin navegar a mano).
   if (perfil) return <Navigate to={(loc.state as { desde?: string } | null)?.desde ?? panelDe(perfil.role)} replace />
+  // Ingresó con Google por primera vez: falta elegir el tipo de usuario.
+  if (usuario && !cargando) return <Navigate to="/app/completar-perfil" replace />
 
   async function enviar(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -54,7 +56,6 @@ export function Ingresar() {
     setEnviando(true)
     try {
       await ingresar(r.datos.email, r.datos.clave)
-      navegar('/app', { replace: true })
     } catch (err) {
       setError(mensajeDeError(err))
     } finally {
@@ -65,7 +66,6 @@ export function Ingresar() {
     setError('')
     try {
       await ingresarConGoogle()
-      navegar('/app', { replace: true })
     } catch (err) {
       setError(mensajeDeError(err))
     }
@@ -125,7 +125,7 @@ export function Registro() {
     setEnviando(true)
     try {
       await ingresarConGoogle(rol as RolRegistrable)
-      navegar('/app', { replace: true })
+      navegar(panelDe(rol as RolRegistrable), { replace: true })
     } catch (err) {
       setError(mensajeDeError(err))
     } finally {
@@ -176,7 +176,7 @@ export function CompletarPerfil() {
     setEnviando(true)
     try {
       await completarPerfil({ nombre: r.datos.nombre, rol: r.datos.rol as RolRegistrable })
-      navegar('/app', { replace: true })
+      navegar(panelDe(r.datos.rol as RolRegistrable), { replace: true })
     } catch (err) {
       setError(mensajeDeError(err))
     } finally {

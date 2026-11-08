@@ -16,6 +16,8 @@
     "typecheck": "tsc -b",
     "emuladores": "firebase emulators:start --only auth,firestore --project demo-confix",
     "seed": "tsx scripts/seed.ts",
+    "catalogo": "tsx scripts/catalogo.ts",
+    "catalogo:prod": "tsx scripts/catalogo.ts --produccion",
     "admin:dar": "tsx scripts/admin-dar.ts",
     "admin:dar:prod": "tsx scripts/admin-dar.ts --produccion",
     "test:reglas": "firebase emulators:exec --only firestore --project demo-confix \"vitest run\"",

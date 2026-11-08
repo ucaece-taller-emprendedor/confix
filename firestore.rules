@@ -139,7 +139,10 @@ service cloud.firestore {
 
     match /professionals/{id} {
       // Lo aprobado es público (se puede buscar sin cuenta); lo demás solo lo ve su dueño o el admin.
-      allow read: if resource.data.estado == 'aprobado' || isOwner(resource.data.ownerId) || isAdmin();
+      // (Si el documento todavía no existe, su futuro dueño puede consultarlo: así sabe que le falta crearlo.)
+      allow read: if resource == null
+        ? (isOwner(id) || isAdmin())
+        : (resource.data.estado == 'aprobado' || isOwner(resource.data.ownerId) || isAdmin());
 
       // Alta: el propio profesional (con cuenta de tipo profesional), siempre PENDIENTE, y con las
       // estadísticas en cero: puntaje, reseñas y trabajos no los puede inventar.

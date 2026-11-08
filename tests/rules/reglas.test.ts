@@ -155,6 +155,13 @@ describe('professionals', () => {
     await assertSucceeds(getDoc(doc(como('pro-pend'), 'professionals/pro-pend')))
     await assertSucceeds(getDoc(doc(admin(), 'professionals/pro-pend')))
   })
+  it('un profesional puede consultar su perfil aunque todavía no lo haya creado (pero no el de otros)', async () => {
+    await assertSucceeds(getDoc(doc(como('pro2'), 'professionals/pro2')))
+    await env.withSecurityRulesDisabled(async ctx => void (await updateDoc(doc(ctx.firestore(), 'users/pro2'), { displayName: 'Pro Dos' })))
+    await assertSucceeds(getDoc(doc(como('nuevo-sin-perfil'), 'professionals/nuevo-sin-perfil')))
+    await assertFails(getDoc(doc(como('nuevo-sin-perfil'), 'professionals/otro-que-no-existe')))
+    await assertFails(getDoc(doc(anonimo(), 'professionals/no-existe')))
+  })
   it('alta: un profesional pendiente crea su perfil, siempre pendiente y con estadísticas en cero', async () => {
     await env.withSecurityRulesDisabled(async ctx => void (await setDoc(doc(ctx.firestore(), 'users/pro-nuevo'), { email: 'pn@test.com', displayName: 'Pro Nuevo', role: 'profesional', status: 'pendiente', isDemo: false, createdAt: new Date() })))
     const db = como('pro-nuevo')
