@@ -1,10 +1,17 @@
 rules_version = '2';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// REGLAS DE SEGURIDAD — son la "validación del servidor" de esta app.
+// REGLAS DE SEGURIDAD DE CONFIX — son la "validación del servidor".
 // Todo lo que no está permitido acá, queda DENEGADO.
-// Roles: usuario | socio (requiere aprobación) | admin (custom claim `admin: true`).
-// Si cambiás roles o colecciones en la app, cambialos acá y en tests/rules.
+// Roles: cliente | profesional (requiere aprobación) | admin (custom claim `admin: true`).
+//
+// Colecciones:
+//   users/{uid}           perfil (role, status). El rol y el estado NO los puede cambiar el usuario.
+//   professionals/{uid}   perfil público del profesional (id = uid; los de demo sin cuenta usan un id propio).
+//                         Solo se ven los aprobados (estado = 'aprobado').
+//   requests/{id}         solicitudes de cotización (cliente → profesional). Las ven el cliente, el profesional y el admin.
+//   categories/{id}       catálogo de categorías (lectura pública, escribe el admin)
+//   barrios/{nombre}      catálogo de barrios (lectura pública, escribe el admin)
 // ─────────────────────────────────────────────────────────────────────────────
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -20,16 +27,21 @@ service cloud.firestore {
     function hasRole(role) { return isActive() && userDoc(request.auth.uid).role == role; }
     function onlyKeys(keys) { return request.resource.data.keys().hasOnly(keys); }
     function hasKeys(keys) { return request.resource.data.keys().hasAll(keys); }
+    function changedOnly(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
     function str(v, min, max) { return v is string && v.size() >= min && v.size() <= max; }
+    function entero(v, min, max) { return v is int && v >= min && v <= max; }
+    // Estado del perfil profesional ↔ estado del usuario (los dos se cambian juntos, en un batch).
+    function estadoUsuarioDe(estadoPerfil) {
+      return estadoPerfil == 'aprobado' ? 'activo' : estadoPerfil;
+    }
 
     // ── users/{uid} ────────────────────────────────────────────────────────
     // Cada uno lee su perfil; el admin lee y gestiona todos.
     match /users/{uid} {
       allow read: if isOwner(uid) || isAdmin();
 
-      // Alta: solo el propio usuario, solo roles registrables, y el estado inicial queda
-      // fijado por el rol (usuario → activo; socio → pendiente hasta que el admin apruebe).
-      // NUNCA se puede crear con role 'admin'.
+      // Alta: solo el propio usuario, solo roles registrables, y el estado inicial queda fijado por el rol
+      // (cliente → activo; profesional → pendiente hasta que el admin lo apruebe). NUNCA con role 'admin'.
       allow create: if isOwner(uid)
         && onlyKeys(['email', 'displayName', 'role', 'status', 'isDemo', 'createdAt'])
         && hasKeys(['email', 'displayName', 'role', 'status', 'isDemo', 'createdAt'])
@@ -37,46 +49,207 @@ service cloud.firestore {
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.isDemo == false
         && request.resource.data.createdAt == request.time
-        && ((request.resource.data.role == 'usuario' && request.resource.data.status == 'activo')
-         || (request.resource.data.role == 'socio' && request.resource.data.status == 'pendiente'));
+        && ((request.resource.data.role == 'cliente' && request.resource.data.status == 'activo')
+         || (request.resource.data.role == 'profesional' && request.resource.data.status == 'pendiente'));
 
-      // El dueño solo puede cambiar su nombre. role y status están vedados (no hay escalada).
-      allow update: if (isOwner(uid)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName'])
+      allow update:
+        // El dueño solo puede cambiar su nombre. role y status están vedados (no hay escalada).
+        if (isOwner(uid)
+          && changedOnly(['displayName'])
           && str(request.resource.data.displayName, 2, 80))
-        // El admin cambia tipo (nunca a 'admin') y estado.
+        // El admin cambia el estado (activo / pendiente / suspendido), nunca el rol.
+        // Si es un profesional con perfil, el perfil tiene que cambiar en el mismo batch al estado equivalente.
         || (isAdmin()
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'status', 'displayName'])
-          && request.resource.data.role in ['usuario', 'socio', 'admin']
+          && changedOnly(['status', 'displayName'])
           && request.resource.data.status in ['activo', 'pendiente', 'suspendido']
-          && (request.resource.data.role != 'admin' || resource.data.role == 'admin'));
+          && (resource.data.role != 'profesional'
+            || !existsAfter(/databases/$(database)/documents/professionals/$(uid))
+            || estadoUsuarioDe(getAfter(/databases/$(database)/documents/professionals/$(uid)).data.estado) == request.resource.data.status));
 
       allow delete: if false;
     }
 
-    // ── items/{id} (colección de ejemplo) ──────────────────────────────────
-    function itemValido(d) {
-      return str(d.titulo, 3, 100) && str(d.descripcion, 10, 1000) && d.publicado is bool;
+    // ── categories/{id} y barrios/{nombre} ─────────────────────────────────
+    match /categories/{id} {
+      allow read: if true;
+      allow create: if isAdmin()
+        && id.matches('^[a-z0-9-]{3,30}$')
+        && onlyKeys(['nombre', 'descripcion', 'orden', 'activa'])
+        && hasKeys(['nombre', 'descripcion', 'orden', 'activa'])
+        && str(request.resource.data.nombre, 3, 40)
+        && str(request.resource.data.descripcion, 0, 100)
+        && entero(request.resource.data.orden, 0, 1000)
+        && request.resource.data.activa is bool;
+      allow update: if isAdmin()
+        && changedOnly(['nombre', 'descripcion', 'orden', 'activa'])
+        && str(request.resource.data.nombre, 3, 40)
+        && str(request.resource.data.descripcion, 0, 100)
+        && entero(request.resource.data.orden, 0, 1000)
+        && request.resource.data.activa is bool;
+      allow delete: if false;
     }
-    match /items/{id} {
-      // Lo publicado es público; lo no publicado solo lo ve su dueño o el admin.
-      allow read: if resource.data.publicado == true || isOwner(resource.data.ownerId) || isAdmin();
+    match /barrios/{nombre} {
+      allow read: if true;
+      allow create: if isAdmin()
+        && onlyKeys(['nombre', 'orden', 'activo'])
+        && hasKeys(['nombre', 'orden', 'activo'])
+        && request.resource.data.nombre == nombre
+        && str(nombre, 3, 40)
+        && entero(request.resource.data.orden, 0, 1000)
+        && request.resource.data.activo is bool;
+      allow update: if isAdmin()
+        && changedOnly(['orden', 'activo'])
+        && entero(request.resource.data.orden, 0, 1000)
+        && request.resource.data.activo is bool;
+      allow delete: if false;
+    }
 
-      // Solo un socio ACTIVO (aprobado) crea, y a su nombre.
-      allow create: if hasRole('socio')
-        && onlyKeys(['ownerId', 'ownerName', 'titulo', 'descripcion', 'publicado', 'isDemo', 'createdAt'])
+    // ── professionals/{id} ─────────────────────────────────────────────────
+    // Un servicio del profesional: { id, nombre, detalle, precio, unidad }.
+    function servicioOk(s) {
+      return s is map && s.size() == 5 && s.keys().hasOnly(['id', 'nombre', 'detalle', 'precio', 'unidad'])
+        && s.id is string && s.id.size() >= 1 && s.id.size() <= 20
+        && s.nombre is string && s.nombre.size() >= 3 && s.nombre.size() <= 60
+        && s.detalle is string && s.detalle.size() <= 100
+        && s.precio is int && s.precio >= 100 && s.precio <= 5000000
+        && s.unidad is string && s.unidad.size() >= 1 && s.unidad.size() <= 30;
+    }
+    // Las reglas no tienen bucles y Firestore corta a las 1000 expresiones evaluadas: se revisan hasta 5 posiciones.
+    function servicioEn(l, i) { return l.size() <= i || servicioOk(l[i]); }
+    function serviciosOk(l) {
+      return l is list && l.size() >= 1 && l.size() <= 5
+        && servicioEn(l, 0) && servicioEn(l, 1) && servicioEn(l, 2) && servicioEn(l, 3) && servicioEn(l, 4);
+    }
+    // Campos que el profesional puede escribir sobre su perfil.
+    function perfilEditableOk(d) {
+      return str(d.nombre, 3, 60)
+        && d.categoria is string && exists(/databases/$(database)/documents/categories/$(d.categoria))
+        && str(d.oficio, 3, 40)
+        && d.barrio is string && exists(/databases/$(database)/documents/barrios/$(d.barrio))
+        && str(d.horario, 3, 40)
+        && entero(d.costoVisita, 0, 100000)
+        && str(d.descripcion, 20, 600)
+        && serviciosOk(d.servicios);
+    }
+    function esProfesionalNoSuspendido() {
+      return signedIn() && hasUserDoc(request.auth.uid)
+        && userDoc(request.auth.uid).role == 'profesional'
+        && userDoc(request.auth.uid).status in ['activo', 'pendiente'];
+    }
+
+    match /professionals/{id} {
+      // Lo aprobado es público (se puede buscar sin cuenta); lo demás solo lo ve su dueño o el admin.
+      allow read: if resource.data.estado == 'aprobado' || isOwner(resource.data.ownerId) || isAdmin();
+
+      // Alta: el propio profesional (con cuenta de tipo profesional), siempre PENDIENTE, y con las
+      // estadísticas en cero: puntaje, reseñas y trabajos no los puede inventar.
+      allow create: if isOwner(id) && esProfesionalNoSuspendido()
+        && onlyKeys(['ownerId', 'nombre', 'categoria', 'oficio', 'descripcion', 'barrio', 'horario', 'costoVisita', 'servicios',
+                     'foto', 'puntaje', 'cantidadResenas', 'distanciaKm', 'dias', 'anosExperiencia', 'trabajosRealizados',
+                     'respuesta', 'resenas', 'disponibleHoy', 'estado', 'isDemo', 'createdAt'])
+        && hasKeys(['ownerId', 'nombre', 'categoria', 'oficio', 'descripcion', 'barrio', 'horario', 'costoVisita', 'servicios',
+                    'foto', 'puntaje', 'cantidadResenas', 'distanciaKm', 'dias', 'anosExperiencia', 'trabajosRealizados',
+                    'respuesta', 'resenas', 'disponibleHoy', 'estado', 'isDemo', 'createdAt'])
         && request.resource.data.ownerId == request.auth.uid
-        && request.resource.data.ownerName == userDoc(request.auth.uid).displayName
+        && request.resource.data.estado == 'pendiente'
         && request.resource.data.isDemo == false
         && request.resource.data.createdAt == request.time
-        && itemValido(request.resource.data);
+        && request.resource.data.foto == ''
+        && request.resource.data.puntaje == 0
+        && request.resource.data.cantidadResenas == 0
+        && request.resource.data.distanciaKm == 2.5
+        && request.resource.data.dias == ['Lun', 'Mar', 'Mié', 'Jue', 'Vie']
+        && request.resource.data.anosExperiencia == 0
+        && request.resource.data.trabajosRealizados == 0
+        && request.resource.data.respuesta == 'Nuevo en CONFIX'
+        && request.resource.data.resenas == []
+        && request.resource.data.disponibleHoy == true
+        && perfilEditableOk(request.resource.data);
 
-      // Edición: el dueño (si sigue activo) o el admin; no se puede cambiar de dueño.
-      allow update: if ((hasRole('socio') && isOwner(resource.data.ownerId)) || isAdmin())
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['titulo', 'descripcion', 'publicado'])
-        && itemValido(request.resource.data);
+      allow update:
+        // El dueño edita solo los datos de su perfil (no el estado, ni las estadísticas, ni las reseñas).
+        if (isOwner(resource.data.ownerId) && esProfesionalNoSuspendido()
+          && changedOnly(['nombre', 'categoria', 'oficio', 'descripcion', 'barrio', 'horario', 'costoVisita', 'servicios'])
+          && perfilEditableOk(request.resource.data))
+        // El admin aprueba / suspende. Si el profesional tiene cuenta, su usuario cambia en el mismo batch.
+        || (isAdmin()
+          && changedOnly(['estado'])
+          && request.resource.data.estado in ['aprobado', 'pendiente', 'suspendido']
+          && (!existsAfter(/databases/$(database)/documents/users/$(resource.data.ownerId))
+            || getAfter(/databases/$(database)/documents/users/$(resource.data.ownerId)).data.status == estadoUsuarioDe(request.resource.data.estado)));
 
-      allow delete: if (hasRole('socio') && isOwner(resource.data.ownerId)) || isAdmin();
+      allow delete: if false;
+    }
+
+    // ── requests/{id} ──────────────────────────────────────────────────────
+    // Un ítem pedido: { nombre, precio, cantidad }.
+    function lineaOk(it) {
+      return it is map && it.size() == 3 && it.keys().hasOnly(['nombre', 'precio', 'cantidad'])
+        && it.nombre is string && it.nombre.size() <= 60
+        && it.precio is int && it.precio >= 100 && it.precio <= 5000000
+        && it.cantidad is int && it.cantidad >= 1 && it.cantidad <= 10;
+    }
+    function lineaEn(l, i) { return l.size() <= i || lineaOk(l[i]); }
+    function itemsOk(l) {
+      return l is list && l.size() >= 1 && l.size() <= 5
+        && lineaEn(l, 0) && lineaEn(l, 1) && lineaEn(l, 2) && lineaEn(l, 3) && lineaEn(l, 4);
+    }
+    function subtotalEn(l, i) { return l.size() <= i ? 0 : l[i].precio * l[i].cantidad; }
+    function subtotal(l) {
+      return subtotalEn(l, 0) + subtotalEn(l, 1) + subtotalEn(l, 2) + subtotalEn(l, 3) + subtotalEn(l, 4);
+    }
+    function profesional(id) { return get(/databases/$(database)/documents/professionals/$(id)).data; }
+
+    // Validación de una solicitud nueva contra el perfil del profesional elegido (se lee una sola vez).
+    function solicitudOk(d) {
+      let p = get(/databases/$(database)/documents/professionals/$(d.professionalId)).data;
+      return p.estado == 'aprobado'
+        && d.professionalOwnerId == p.ownerId
+        && d.professionalNombre == p.nombre
+        && d.costoVisita == p.costoVisita
+        && d.total == d.costoVisita + subtotal(d.items);
+    }
+
+    match /requests/{id} {
+      // Las ve el cliente que la pidió, el profesional destinatario y el admin (el teléfono viaja acá).
+      allow read: if isOwner(resource.data.clientId) || isOwner(resource.data.professionalOwnerId) || isAdmin();
+
+      // Solo un CLIENTE activo, a su nombre, hacia un profesional APROBADO, siempre en estado 'pendiente'.
+      // El total se recalcula acá: ítems + visita del profesional.
+      allow create: if hasRole('cliente')
+        && onlyKeys(['clientId', 'professionalId', 'professionalOwnerId', 'professionalNombre', 'items', 'direccion', 'piso', 'barrio',
+                     'fecha', 'franja', 'notas', 'contactoNombre', 'contactoTelefono', 'costoVisita', 'total', 'estado', 'isDemo', 'createdAt'])
+        && hasKeys(['clientId', 'professionalId', 'professionalOwnerId', 'professionalNombre', 'items', 'direccion', 'piso', 'barrio',
+                    'fecha', 'franja', 'notas', 'contactoNombre', 'contactoTelefono', 'costoVisita', 'total', 'estado', 'isDemo', 'createdAt'])
+        && request.resource.data.clientId == request.auth.uid
+        && request.resource.data.estado == 'pendiente'
+        && request.resource.data.isDemo == false
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.professionalId is string
+        && exists(/databases/$(database)/documents/professionals/$(request.resource.data.professionalId))
+        && itemsOk(request.resource.data.items)
+        && solicitudOk(request.resource.data)
+        && str(request.resource.data.direccion, 4, 120)
+        && str(request.resource.data.piso, 0, 30)
+        && str(request.resource.data.barrio, 3, 40)
+        && str(request.resource.data.fecha, 1, 80)
+        && str(request.resource.data.franja, 1, 60)
+        && str(request.resource.data.notas, 0, 500)
+        && str(request.resource.data.contactoNombre, 3, 80)
+        && str(request.resource.data.contactoTelefono, 8, 30);
+
+      // Solo cambia el estado:
+      //  · el cliente puede cancelar mientras está pendiente o aceptada;
+      //  · el profesional destinatario: pendiente → aceptada / rechazada; aceptada → completada / rechazada.
+      allow update: if changedOnly(['estado']) && (
+        (hasRole('cliente') && isOwner(resource.data.clientId)
+          && resource.data.estado in ['pendiente', 'aceptada']
+          && request.resource.data.estado == 'cancelada')
+        || (hasRole('profesional') && isOwner(resource.data.professionalOwnerId)
+          && ((resource.data.estado == 'pendiente' && request.resource.data.estado in ['aceptada', 'rechazada'])
+           || (resource.data.estado == 'aceptada' && request.resource.data.estado in ['completada', 'rechazada']))));
+
+      allow delete: if false;
     }
   }
 }
