@@ -6,6 +6,7 @@ import { CatalogoProvider, useCatalogo } from '@/lib/CatalogoContext'
 import { useSolicitud } from '@/lib/SolicitudContext'
 import { Marca } from './Marca'
 import { Boton } from './ui'
+import { CambiarClave } from './RecuperarClave'
 
 export type EnlaceNav = { to: string; etiqueta: string; fin?: boolean }
 
@@ -172,6 +173,7 @@ export function AdminLayout({ navegacion }: { navegacion: EnlaceNav[] }) {
           ))}
         </nav>
         <p className="mt-6 hidden truncate text-xs text-suave md:block">{usuario?.email}</p>
+        <CambiarClave className="mt-2" />
         <Boton variante="borde" className="mt-2 bg-fondo" onClick={() => void salir().then(() => navegar('/admin/login'))}><LogOut className="size-4" aria-hidden /> Salir</Boton>
       </aside>
       <main className="min-w-0 p-4 md:p-8"><Outlet /></main>
