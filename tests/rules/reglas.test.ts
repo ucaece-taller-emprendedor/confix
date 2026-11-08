@@ -1,5 +1,5 @@
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing'
-import { collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, updateDoc, where, writeBatch, deleteDoc } from 'firebase/firestore'
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest'
 import { crearEntorno } from './ayuda'
 
@@ -90,7 +90,6 @@ describe('users', () => {
   })
   it('admin: suspende y reactiva clientes, pero no cambia roles ni borra', async () => {
     await assertSucceeds(updateDoc(doc(admin(), 'users/cliente1'), { status: 'suspendido' }))
-    await assertFails(updateDoc(doc(admin(), 'users/cliente1'), { role: 'admin' }))
     await assertFails(updateDoc(doc(admin(), 'users/cliente1'), { status: 'cualquiera' }))
     await assertFails(updateDoc(doc(como('cliente1', 'c1@test.com', { admin: false }), 'users/cliente2'), { status: 'suspendido' }))
   })
@@ -285,5 +284,37 @@ describe('todo lo demás está denegado', () => {
   it('colecciones no declaradas', async () => {
     await assertFails(setDoc(doc(como('cliente1'), 'cosas/a'), { x: 1 }))
     await assertFails(getDoc(doc(admin(), 'cosas/a')))
+  })
+})
+
+describe('administradores dados desde la app (role "admin" en el perfil)', () => {
+  const adminDoc = (uid: string, status = 'activo') =>
+    env.withSecurityRulesDisabled(async ctx => setDoc(doc(ctx.firestore(), `users/${uid}`), { email: `${uid}@test.com`, displayName: 'Admin De App', role: 'admin', status, isDemo: false, createdAt: new Date() }))
+
+  it('un admin (claim) promueve a un usuario activo y esa persona pasa a ser admin', async () => {
+    await assertFails(getDocs(collection(como('cliente1'), 'users')))
+    await assertSucceeds(updateDoc(doc(admin(), 'users/cliente1'), { role: 'admin' }))
+    await assertSucceeds(getDocs(collection(como('cliente1'), 'users')))
+  })
+  it('no se puede promover a alguien pendiente o suspendido, ni cambiar otros campos a la vez', async () => {
+    await assertFails(updateDoc(doc(admin(), 'users/pro-pend'), { role: 'admin' }))
+    await assertFails(updateDoc(doc(admin(), 'users/cliente1'), { role: 'admin', displayName: 'Otro' }))
+  })
+  it('quien no es admin no puede promover a nadie, ni a sí mismo', async () => {
+    await assertFails(updateDoc(doc(como('cliente1'), 'users/cliente2'), { role: 'admin' }))
+    await assertFails(updateDoc(doc(como('cliente1'), 'users/cliente1'), { role: 'admin' }))
+  })
+  it('un admin de la app promueve y quita el rol a otros, pero no cambia el propio', async () => {
+    await adminDoc('adm1')
+    await adminDoc('adm2')
+    const db = como('adm1')
+    await assertSucceeds(updateDoc(doc(db, 'users/cliente1'), { role: 'admin' }))
+    await assertSucceeds(updateDoc(doc(db, 'users/adm2'), { role: 'cliente' }))
+    await assertFails(updateDoc(doc(db, 'users/adm1'), { role: 'cliente' }))
+    await assertFails(deleteDoc(doc(db, 'users/cliente1')))
+  })
+  it('un admin de la app suspendido pierde los poderes', async () => {
+    await adminDoc('adm3', 'suspendido')
+    await assertFails(getDocs(collection(como('adm3'), 'users')))
   })
 })
