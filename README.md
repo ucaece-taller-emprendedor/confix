@@ -2,7 +2,7 @@
 
 CONFIX es un marketplace de **servicios para el hogar** (plomería, electricidad, pintura y carpintería): el **cliente** busca por categoría y barrio, compara profesionales verificados con reseñas y precios, y pide una cotización; el **profesional** se registra (queda *pendiente* hasta que el equipo lo aprueba), arma su perfil y servicios y gestiona los pedidos que recibe; el **admin** aprueba o suspende profesionales, gestiona usuarios y el catálogo, y ve las solicitudes. Está construida desde la plantilla común del Taller. **Todo gratis y sin tarjeta** (Firebase plan Spark + GitHub).
 
-Sitio: https://confix-mdp.web.app (cuando se despliegue) · Proyecto Firebase: `confix-mdp`.
+Sitio: https://confix-ucaecemdp.web.app (cuando se despliegue) · Proyecto Firebase: `confix-mdp`.
 
 > Es la migración a Firebase de la versión original en Next.js + Postgres (rama `estandar-catedra` del repo `confix`). Mismo diseño, textos y pantallas; ver "Diferencias con la versión original" al final.
 

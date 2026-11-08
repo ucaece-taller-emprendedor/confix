@@ -1,6 +1,6 @@
 # Prueba E2E en producción — CONFIX
 
-Probado el **2026-11-08** en https://confix-mdp.web.app con un navegador real (Chromium), en celular (390 px) y escritorio. Se usó una cuenta de prueba de admin y un usuario nuevo registrado para la prueba (**ya borrado**).
+Probado el **2026-11-08** en https://confix-ucaecemdp.web.app con un navegador real (Chromium), en celular (390 px) y escritorio. Se usó una cuenta de prueba de admin y un usuario nuevo registrado para la prueba (**ya borrado**).
 
 ## Resultado
 
