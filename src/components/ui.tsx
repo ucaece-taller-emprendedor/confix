@@ -6,7 +6,7 @@ const base = 'inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl
 const variantes = {
   primario: 'bg-primario text-primario-texto hover:opacity-90',
   acento: 'bg-acento text-acento-texto hover:opacity-90',
-  borde: 'bg-secundario text-texto hover:bg-acento',
+  borde: 'border-2 border-borde bg-superficie text-texto hover:bg-acento',
   fantasma: 'text-primario hover:bg-primario/10',
   peligro: 'bg-peligro text-white hover:opacity-90',
 }
@@ -41,7 +41,7 @@ export function Tarjeta({ className = '', ...p }: React.HTMLAttributes<HTMLDivEl
   return <div className={`rounded-3xl bg-secundario p-5 ${className}`} {...p} />
 }
 
-const campo = 'mt-1 block min-h-12 w-full rounded-2xl border-2 border-transparent bg-secundario px-4 text-base font-medium text-texto outline-none transition-colors placeholder:text-suave/70 focus-visible:border-primario aria-[invalid=true]:border-peligro'
+const campo = 'mt-1 block min-h-12 w-full rounded-2xl border-2 border-borde bg-superficie px-4 text-base font-medium text-texto outline-none transition-colors placeholder:text-suave/70 focus-visible:border-primario aria-[invalid=true]:border-peligro'
 
 type CampoProps = { etiqueta: string; error?: string | undefined; ayuda?: string }
 export function Campo({ etiqueta, error, ayuda, ...p }: CampoProps & InputHTMLAttributes<HTMLInputElement>) {
