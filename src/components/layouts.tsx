@@ -61,7 +61,7 @@ function SelectorBarrio() {
     <label className="relative flex items-center">
       <span className="sr-only">Tu zona</span>
       <MapPin className="pointer-events-none absolute left-3 size-4 text-primario" aria-hidden="true" />
-      <select value={barrio || barrios[0]} onChange={e => setBarrio(e.target.value)} className="h-10 max-w-40 appearance-none truncate rounded-full bg-secundario pl-9 pr-8 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-primario">
+      <select value={barrio || barrios[0]} onChange={e => setBarrio(e.target.value)} className="h-10 max-w-28 appearance-none sm:max-w-40 truncate rounded-full bg-secundario pl-9 pr-8 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-primario">
         {barrios.map(b => <option key={b} value={b}>{b}, CABA</option>)}
       </select>
       <ChevronDown className="pointer-events-none absolute right-3 size-4 text-suave" aria-hidden="true" />
@@ -135,16 +135,16 @@ export function AppLayout() {
       <div className="flex min-h-dvh flex-col">
         <header className="sticky top-0 z-30 border-b border-borde/70 bg-fondo/90 backdrop-blur">
           <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between gap-3 px-4">
-            <Marca to="/app" />
+            <div className="shrink-0"><Marca to="/app" /></div>
             <EnlacesApp />
             <div className="flex items-center gap-2">
               <SelectorBarrio />
               {usuario && perfil ? (
-                <button type="button" aria-label="Salir" onClick={() => void salir().then(() => navegar('/'))} className={`${botonCabecera} bg-primario text-primario-texto hover:opacity-90`}>
-                  <LogOut className="size-4" aria-hidden /> <span className="hidden sm:inline">{perfil.displayName.split(' ')[0]} · </span>Salir
+                <button type="button" aria-label="Salir" onClick={() => void salir().then(() => navegar('/'))} className={`${botonCabecera} shrink-0 bg-primario px-3 text-primario-texto hover:opacity-90 sm:px-4`}>
+                  <LogOut className="size-4" aria-hidden /> <span className="hidden sm:inline">{perfil.displayName.split(' ')[0]} · Salir</span>
                 </button>
               ) : (
-                <Link to="/app/ingresar" className={`${botonCabecera} hidden bg-primario text-primario-texto hover:opacity-90 md:inline-flex`}><User className="size-4" aria-hidden /> Ingresar</Link>
+                <Link to="/app/ingresar" className={`${botonCabecera} max-md:hidden bg-primario text-primario-texto hover:opacity-90`}><User className="size-4" aria-hidden /> Ingresar</Link>
               )}
             </div>
           </div>
