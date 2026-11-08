@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router'
 import { RequireAdmin, RequireRole } from '@/auth/guards'
 import { AdminLayout, AppLayout, SitioLayout } from '@/components/layouts'
 import Administradores from '@/pages/admin/Administradores'
+import Estadisticas from '@/pages/admin/Estadisticas'
 import AdminLogin from '@/pages/admin/AdminLogin'
 import { AdminCatalogo, AdminInicio, AdminProfesionales, AdminSolicitudes, AdminUsuarios } from '@/pages/admin/AdminPaginas'
 import { CompletarPerfil, Ingresar, Registro, Suspendido } from '@/pages/app/Acceso'
@@ -38,7 +39,7 @@ export const router = createBrowserRouter([
     path: '/admin',
     element: (
       <RequireAdmin>
-        <AdminLayout navegacion={[{ to: '/admin', etiqueta: 'Resumen', fin: true }, { to: '/admin/profesionales', etiqueta: 'Profesionales' }, { to: '/admin/usuarios', etiqueta: 'Usuarios' }, { to: '/admin/administradores', etiqueta: 'Administradores' }, { to: '/admin/solicitudes', etiqueta: 'Solicitudes' }, { to: '/admin/catalogo', etiqueta: 'Catálogo' }]} />
+        <AdminLayout navegacion={[{ to: '/admin', etiqueta: 'Resumen', fin: true }, { to: '/admin/profesionales', etiqueta: 'Profesionales' }, { to: '/admin/usuarios', etiqueta: 'Usuarios' }, { to: '/admin/administradores', etiqueta: 'Administradores' }, { to: '/admin/estadisticas', etiqueta: 'Estadísticas' }, { to: '/admin/solicitudes', etiqueta: 'Solicitudes' }, { to: '/admin/catalogo', etiqueta: 'Catálogo' }]} />
       </RequireAdmin>
     ),
     children: [
@@ -46,6 +47,7 @@ export const router = createBrowserRouter([
       { path: 'profesionales', element: <AdminProfesionales /> },
       { path: 'usuarios', element: <AdminUsuarios /> },
       { path: 'administradores', element: <Administradores /> },
+      { path: 'estadisticas', element: <Estadisticas /> },
       { path: 'solicitudes', element: <AdminSolicitudes /> },
       { path: 'catalogo', element: <AdminCatalogo /> },
       { path: '*', element: <Navigate to="/admin" replace /> },
