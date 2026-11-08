@@ -6,6 +6,8 @@ Sitio: https://confix-mdp.web.app (cuando se despliegue) · Proyecto Firebase: `
 
 > Es la migración a Firebase de la versión original en Next.js + Postgres (rama `estandar-catedra` del repo `confix`). Mismo diseño, textos y pantallas; ver "Diferencias con la versión original" al final.
 
+> **Trabajar con una IA / traspaso:** [`CLAUDE.md`](CLAUDE.md) · [`docs/TRABAJAR-CON-IA.md`](docs/TRABAJAR-CON-IA.md) · [`docs/INSTRUCTIVO-SETUP.md`](docs/INSTRUCTIVO-SETUP.md) · [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md)
+
 ## Qué incluye
 
 | Parte | Ruta | Descripción |
@@ -104,7 +106,7 @@ Para que el workflow funcione el responsable del proyecto configura **una sola v
    - **Cargar el catálogo base** (categorías y barrios; sin esto la app queda vacía): `FIREBASE_PROJECT_ID=confix-mdp npm run catalogo:prod` con credenciales de Google (`gcloud auth application-default login`). Después el admin los edita desde `/admin/catalogo`.
    - **Dar el primer admin** (ver más abajo): el seed de demo NO corre en producción.
 4. Conectar GitHub ↔ Hosting **una sola vez**: `npx firebase init hosting:github` (crea la cuenta de servicio y carga el secreto `FIREBASE_SERVICE_ACCOUNT_...` en GitHub; **no se crea ni se sube a mano**). Ajustar el nombre del secreto en `.github/workflows/deploy.yml` si hace falta.
-5. Desde ahí, **cada merge a `main` publica la web** (`.github/workflows/deploy.yml`). Las reglas se vuelven a desplegar con el paso 3 cuando cambian.
+5. Desde ahí, **cada merge a `prod` publica la web (y `qa` publica una vista previa)** (`.github/workflows/deploy.yml`). Las reglas se vuelven a desplegar con el paso 3 cuando cambian.
 6. En Authentication → Configuración → Dominios autorizados, verificar que figure el dominio `.web.app` del sitio (para el login con Google).
 
 CI (`.github/workflows/ci.yml`): en cada PR corre lint, build, tests de reglas y Playwright contra emuladores.
